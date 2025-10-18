@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Health Information Systems — Chapter 1 Exam</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --muted:#6b7280; --accent:#0b63f6;
+    --ok:#10b981; --danger:#ef4444; font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  }
+  body{background:var(--bg); margin:0; padding:28px; color:#0f172a;}
+  .container{max-width:1100px; margin:0 auto;}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  header h1{margin:0;font-size:20px}
+  .meta{color:var(--muted); font-size:13px}
+  .levels{display:flex;gap:8px;margin:18px 0;}
+  .btn{background:var(--card);border:1px solid #e6edf9;padding:8px 12px;border-radius:10px;cursor:pointer;}
+  .btn.active{box-shadow:0 4px 10px rgba(11,99,246,0.12);border-color:rgba(11,99,246,0.15)}
+  .panel{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(11,33,71,0.04)}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .stat{background:#fbfdff;padding:8px 10px;border-radius:8px;border:1px solid #eef6ff;font-size:13px;color:var(--muted)}
+  .questions{margin-top:14px}
+  .qcard{border-radius:10px;padding:14px;margin-bottom:12px;background:linear-gradient(180deg, #fff,#fbfdff);border:1px solid #eef6ff}
+  .qhead{display:flex;justify-content:space-between;align-items:center}
+  .qno{font-weight:600;color:#0f172a}
+  .qtext{margin:8px 0;color:#0b1220}
+  .options{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .opt{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;border:1px solid #eef6ff;background:white;cursor:pointer}
+  .opt input{accent-color:var(--accent)}
+  .answer{margin-top:10px;padding:10px;border-radius:8px;background:#f1f8ff;border:1px solid #e6f0ff;color:#08306a}
+  .essay{width:100%;min-height:90px;padding:10px;border-radius:8px;border:1px solid #e6edf9}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin-top:18px;color:var(--muted);font-size:13px}
+  .save-indicator{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef7f0;color:var(--ok);border:1px solid rgba(16,185,129,0.12);font-weight:600}
+  .progress{height:10px;background:#eef6ff;border-radius:999px;overflow:hidden}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#6aa6ff)}
+  .show-answer-btn{background:transparent;border:1px dashed #dbeafe;padding:6px 8px;border-radius:8px;cursor:pointer;color:#08306a}
+  .reset{background:#fff5f5;border:1px solid #fee2e2;color:var(--danger);padding:8px 10px;border-radius:8px;cursor:pointer}
+  .note{background:#fffbea;border:1px solid #fff3cd;padding:8px;border-radius:8px;color:#5c3d00}
+  .flex{display:flex;gap:8px;align-items:center}
+  @media (max-width:720px){header{flex-direction:column;align-items:flex-start} .levels{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Health Information Systems — Chapter 1 (Exam)</h1>
+        <div class="meta">Light design • English • All progress saved in your browser (localStorage)</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="small">Source: Chapter 1 — Introduction to Information Systems (HIS course).</div>
+        <div class="small">Questions derived from the provided course material. See source file reference in chat. :contentReference[oaicite:2]{index=2}</div>
+      </div>
+    </header>
+
+    <div class="levels">
+      <button class="btn level-btn active" data-level="easy">Easy</button>
+      <button class="btn level-btn" data-level="medium">Medium</button>
+      <button class="btn level-btn" data-level="hard">Hard</button>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="stats">
+        <div class="stat">Level: <strong id="currentLevel">Easy</strong></div>
+        <div class="stat">MCQs per level: <strong>30</strong></div>
+        <div class="stat">Essay per level: <strong>10</strong></div>
+        <div class="stat">Saved: <span id="savedState">No</span></div>
+      </div>
+
+      <div class="controls">
+        <div class="flex">
+          <div class="small">Progress</div>
+          <div style="width:220px">
+            <div class="progress" aria-hidden>
+              <i id="progressBar" style="width:0%"></i>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn" id="shuffleBtn">Shuffle Questions</button>
+        <button class="btn" id="showAllAnswersBtn">Show All Answers</button>
+        <button class="reset" id="resetBtn">Reset Saved Data</button>
+        <div style="margin-left:auto" class="small">Tip: Your answers & visibility are stored locally.</div>
+      </div>
+
+      <div id="questionsContainer" class="questions"></div>
+
+      <footer>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="save-indicator" id="autoSaveIndicator">Auto-saved</div>
+          <div class="note">Essay answers are free-text. Correct essay expectations are shown as guidance under each essay question.</div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+<script>
+/*
+  Exam generator for "Health Information Systems" Chapter 1.
+  - 3 levels: easy / medium / hard
+  - Each level: 30 MCQs + 10 essay prompts
+  - Correct answers displayed under each question
+  - All user selections, essay answers and show-answer states saved to localStorage
+  - Questions are derived from Chapter 1 topics (components of IS, CBIS, data vs info, SDLC, HIS benefits/challenges, data quality, etc.)
+*/
+
+/* ---------- Configuration ---------- */
+const MCQ_COUNT = 30;
+const ESSAY_COUNT = 10;
+const LEVELS = ['easy','medium','hard'];
+
+/* ---------- Base facts & topic pools (informed by Chapter 1) ---------- */
+/* These short facts are referenced / used to generate MCQs and essay prompts */
+const topics = {
+  basics: [
+    {q:"Which of the following best defines an Information System (IS)?",
+     correct:"A set of interrelated components that collect, process, store and distribute information to support decision making",
+     distractors:["A set of hardware only used for computation","A single software application used for billing only","A social network for sharing news"]},
+
+    {q:"Which component is NOT a primary component of a computer-based information system (CBIS)?",
+     correct:"Cafeteria services",
+     distractors:["Hardware","Software","Database"]},
+
+    {q:"Which activity is an example of 'processing' in an information system?",
+     correct:"Converting raw data into meaningful reports",
+     distractors:["Collecting patient details at reception","Printing a report","Storing files in a cabinet"]},
+  ],
+  components: [
+    {q:"Which of the following is an example of 'input' in an IS?",
+     correct:"Patient demographic data entered at registration",
+     distractors:["A printed summary report","A backup archive","A database server"]},
+    {q:"What does 'feedback' in an information system refer to?",
+     correct:"Information returned to modify the input or processing activities",
+     distractors:["The system's manual","The output only","A printed receipt"]},
+    {q:"Which item is part of the 'technology' infrastructure in CBIS?",
+     correct:"Telecommunications",
+     distractors:["Clinic coffee machine","Hospital menu","Parking lot"]},
+  ],
+  dataInfo: [
+    {q:"Which statement correctly differentiates data from information?",
+     correct:"Data are raw facts; information is processed data that has meaning",
+     distractors:["Information is raw; data is processed","They are the same","Data is always digital"]},
+    {q:"Which characteristic is NOT usually used to judge data quality?",
+     correct:"Brightness",
+     distractors:["Accuracy","Completeness","Timeliness"]},
+  ],
+  sdLC: [
+    {q:"Which of the following is typically the first phase in the System Development Life Cycle (SDLC)?",
+     correct:"Systems investigation / requirements analysis",
+     distractors:["Maintenance","Implementation","Testing"]},
+    {q:"What is the main purpose of the design phase in SDLC?",
+     correct:"To specify how the new system will fulfill user requirements",
+     distractors:["To buy hardware only","To train staff only","To discard the existing system"]},
+  ],
+  his: [
+    {q:"Which is a primary reason for implementing Health Information Systems (HIS)?",
+     correct:"To improve access to patient records and support better decision-making",
+     distractors:["Increase paperwork","Slow down workflows intentionally","Replace clinical staff"]},
+    {q:"Which is an opportunity offered by HIS?",
+     correct:"Reduction in medical errors",
+     distractors:["Increase in manual transcription","Harder audits","More paper files"]},
+  ],
+  trends: [
+    {q:"Which trend describes movement from paper-based to computer-based records?",
+     correct:"From paper-based systems to computer-based systems",
+     distractors:["From local to hyperlocal","From deliberate to accidental","From clinical to clerical"]},
+    {q:"What does interoperability refer to in health IT?",
+     correct:"Ability of different systems to exchange and use information",
+     distractors:["Ability of users to login","The speed of printers","The color of software UI"]},
+  ]
+};
+
+/* ---------- Utilities to generate question sets ---------- */
+
+function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function generateMCQsForLevel(level){
+  // We'll create MCQ_COUNT questions combining the pools but varying wording/distractors.
+  const pool = [].concat(topics.basics, topics.components, topics.dataInfo, topics.sdLC, topics.his, topics.trends);
+  const generated = [];
+  // reuse items cyclically to reach desired count, but shuffle distractors to give variation
+  for(let i=0;i<MCQ_COUNT;i++){
+    const base = pool[i % pool.length];
+    // construct choices: correct + 3 distractors (if not enough, generate plausible distractor)
+    const choices = [base.correct, ...(base.distractors || [])].slice(0,4);
+    // if less than 4, add generic distractors
+    while(choices.length<4){
+      choices.push("Not applicable");
+    }
+    // shuffle choices
+    const shuffled = choices.map(c=>({c, r: c===base.correct})).sort(()=>Math.random()-0.5);
+    generated.push({
+      id:`${level}-mcq-${i+1}`,
+      type:'mcq',
+      text: base.q + (level==='easy' ? '' : level==='medium' ? '' : ''), // could add difficulty-specific wording
+      choices: shuffled.map(s=>s.c),
+      correct: base.correct
+    });
+  }
+  return generated;
+}
+
+function generateEssaysForLevel(level){
+  // create ESSAY_COUNT prompts guided by chapter topics; include guidance/expected points under each
+  const prompts = [
+    {q:"Explain what an Information System (IS) is and list its main components.", guidance:"Define input, processing, storage, output, feedback; mention hardware, software, database, people, procedures."},
+    {q:"Describe the difference between data and information and why data quality matters in healthcare.", guidance:"Explain accuracy, completeness, timeliness, reliability and examples in clinical context."},
+    {q:"Outline the steps of Systems Development Life Cycle (SDLC) and briefly explain the purpose of each step.", guidance:"Mention investigation/analysis, design, implementation, testing, maintenance/review."},
+    {q:"Discuss three benefits and two potential challenges of implementing a Health Information System.", guidance:"Benefits: error reduction, cost saving, better access; Challenges: interoperability, cost, training, privacy."},
+    {q:"Describe the role of electronic health records (EHR) within a HIS.", guidance:"Manage patient data, support clinical decisions, interoperability and data sharing considerations."},
+    {q:"Explain what is meant by 'interoperability' and why standards (e.g., HL7) matter.", guidance:"Data exchange, consistency, machine-readability, health data standards."},
+    {q:"Describe the 'input' and 'output' concepts with healthcare examples.", guidance:"Input: patient registration, lab results; Output: reports, discharge summary, billing."},
+    {q:"Explain the Health Metrics Network (HMN) six components approach (brief).", guidance:"Mention resources, indicators, data sources, data management, information products, dissemination/use."},
+    {q:"Explain why confidentiality and security are crucial in HIS and give two examples of security controls.", guidance:"Encryption, access control, audit logs, policies; mention HIPAA as an example of regulation."},
+    {q:"How can HIS improve public health decision-making at district and national levels?", guidance:"Aggregation of data, trend analysis, immunization coverage monitoring, resource planning."}
+  ];
+  // For difficulty, change expected depth in guidance
+  return prompts.slice(0,ESSAY_COUNT).map((p,i)=>({
+    id:`essay-${level}-${i+1}`,
+    type:'essay',
+    text: p.q + (level==='hard' ? " (Include examples and references where appropriate.)" : ""),
+    guidance: p.guidance + (level==='easy' ? " (short answer expected)" : level==='medium' ? " (moderate detail)" : " (detailed answer expected)")
+  }));
+}
+
+/* ---------- Storage helpers ---------- */
+const STORAGE_KEY = 'his_ch1_exam_v1';
+
+function saveState(state){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  updateSavedIndicator(true);
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); } catch(e){ return null; }
+}
+
+function clearState(){
+  localStorage.removeItem(STORAGE_KEY);
+  updateSavedIndicator(false);
+}
+
+/* ---------- App state ---------- */
+let appState = {
+  level: 'easy',
+  mcqs: { easy:[], medium:[], hard:[] },
+  essays: { easy:[], medium:[], hard:[] },
+  answers: {}, // { questionId: {selected: "option text" or essayText, showAnswer: bool } }
+  lastSaved: null
+};
+
+/* ---------- Initialize (generate sets if not present) ---------- */
+function initQuestionBank(){
+  LEVELS.forEach(l=>{
+    appState.mcqs[l] = generateMCQsForLevel(l);
+    appState.essays[l] = generateEssaysForLevel(l);
+  });
+}
+
+/* ---------- Rendering ---------- */
+
+const questionsContainer = document.getElementById('questionsContainer');
+const currentLevelEl = document.getElementById('currentLevel');
+const savedStateEl = document.getElementById('savedState');
+const progressBar = document.getElementById('progressBar');
+const autoSaveIndicator = document.getElementById('autoSaveIndicator');
+
+function render(){
+  questionsContainer.innerHTML = '';
+  currentLevelEl.textContent = capitalize(appState.level);
+
+  const mcqs = appState.mcqs[appState.level];
+  const essays = appState.essays[appState.level];
+  const total = mcqs.length + essays.length;
+
+  // render MCQs
+  mcqs.forEach((q, idx) => {
+    const qcard = document.createElement('div'); qcard.className='qcard';
+    qcard.innerHTML = `
+      <div class="qhead"><div class="qno">Q${idx+1} (MCQ)</div><div class="small">${q.id}</div></div>
+      <div class="qtext">${escapeHtml(q.text)}</div>
+      <div class="options" id="opts-${q.id}"></div>
+      <div style="margin-top:8px" class="flex">
+        <button class="show-answer-btn" data-q="${q.id}">Show answer</button>
+        <div class="small" style="margin-left:auto">Correct answer will appear below when shown.</div>
+      </div>
+      <div class="answer" id="ans-${q.id}" style="display:none"></div>
+    `;
+    questionsContainer.appendChild(qcard);
+
+    const optsEl = qcard.querySelector(`#opts-${q.id}`);
+    q.choices.forEach(choice => {
+      const opt = document.createElement('label');
+      opt.className = 'opt';
+      opt.innerHTML = `<input type="radio" name="${q.id}" value="${escapeHtml(choice)}"> <div style="flex:1">${escapeHtml(choice)}</div>`;
+      optsEl.appendChild(opt);
+
+      // restore selection if exists
+      const saved = appState.answers[q.id];
+      if(saved && saved.selected === choice){
+        opt.querySelector('input').checked = true;
+      }
+
+      opt.addEventListener('click', (e)=>{
+        appState.answers[q.id] = appState.answers[q.id] || {};
+        appState.answers[q.id].selected = choice;
+        saveNow();
+        updateProgress();
+      });
+    });
+
+    // show answer button
+    const showBtn = qcard.querySelector('.show-answer-btn');
+    const ansDiv = qcard.querySelector(`#ans-${q.id}`);
+    const saved = appState.answers[q.id];
+    if(saved && saved.showAnswer){
+      ansDiv.style.display='block';
+      ansDiv.textContent = 'Correct: ' + q.correct;
+      showBtn.textContent = 'Hide answer';
+    }
+    showBtn.addEventListener('click', ()=>{
+      appState.answers[q.id] = appState.answers[q.id] || {};
+      appState.answers[q.id].showAnswer = !appState.answers[q.id].showAnswer;
+      if(appState.answers[q.id].showAnswer){
+        ansDiv.style.display='block';
+        ansDiv.textContent = 'Correct: ' + q.correct;
+        showBtn.textContent = 'Hide answer';
+      } else {
+        ansDiv.style.display='none';
+        showBtn.textContent = 'Show answer';
+      }
+      saveNow();
+    });
+  });
+
+  // render Essays
+  essays.forEach((e, idx) => {
+    const qnum = mcqs.length + idx + 1;
+    const qcard = document.createElement('div'); qcard.className='qcard';
+    qcard.innerHTML = `
+      <div class="qhead"><div class="qno">Q${qnum} (Essay)</div><div class="small">${e.id}</div></div>
+      <div class="qtext">${escapeHtml(e.text)}</div>
+      <textarea class="essay" id="essay-${e.id}" placeholder="Write your essay answer here..."></textarea>
+      <div class="answer" id="guid-${e.id}"><strong>Guidance:</strong> ${escapeHtml(e.guidance)}</div>
+    `;
+    questionsContainer.appendChild(qcard);
+
+    const ta = qcard.querySelector(`#essay-${e.id}`);
+    const saved = appState.answers[e.id] && appState.answers[e.id].selected;
+    if(saved) ta.value = saved;
+
+    ta.addEventListener('input', ()=>{
+      appState.answers[e.id] = appState.answers[e.id] || {};
+      appState.answers[e.id].selected = ta.value;
+      saveNowDebounced();
+    });
+  });
+
+  updateProgress();
+}
+
+function updateProgress(){
+  const mcqs = appState.mcqs[appState.level];
+  const essays = appState.essays[appState.level];
+  const total = mcqs.length + essays.length;
+  let answered = 0;
+  mcqs.forEach(q=>{
+    if(appState.answers[q.id] && appState.answers[q.id].selected) answered++;
+  });
+  essays.forEach(e=>{
+    if(appState.answers[e.id] && appState.answers[e.id].selected && appState.answers[e.id].selected.trim()!=="") answered++;
+  });
+  const pct = Math.round(100 * answered / total);
+  progressBar.style.width = pct + '%';
+  savedStateEl.textContent = appState.lastSaved ? new Date(appState.lastSaved).toLocaleString() : 'No';
+}
+
+/* ---------- Helper functions ---------- */
+function capitalize(s){ return s[0].toUpperCase()+s.slice(1); }
+function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+/* ---------- Save/load ---------- */
+function saveNow(){
+  appState.lastSaved = Date.now();
+  saveState(appState);
+}
+let saveDebounceTimer = null;
+function saveNowDebounced(){
+  if(saveDebounceTimer) clearTimeout(saveDebounceTimer);
+  saveDebounceTimer = setTimeout(()=>{ saveNow(); saveDebounceTimer = null; }, 700);
+}
+function updateSavedIndicator(saved){
+  if(saved){
+    autoSaveIndicator.style.display='inline-block';
+    savedStateEl.textContent = new Date(appState.lastSaved).toLocaleString();
+  } else {
+    autoSaveIndicator.style.display='none';
+    savedStateEl.textContent = 'No';
+  }
+}
+
+/* ---------- UI controls ---------- */
+document.querySelectorAll('.level-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    appState.level = btn.dataset.level;
+    render();
+    saveNow();
+  });
+});
+
+document.getElementById('shuffleBtn').addEventListener('click', ()=>{
+  // simple shuffle current level arrays
+  const l = appState.level;
+  appState.mcqs[l] = appState.mcqs[l].sort(()=>Math.random()-0.5);
+  appState.essays[l] = appState.essays[l].sort(()=>Math.random()-0.5);
+  render();
+  saveNow();
+});
+
+document.getElementById('showAllAnswersBtn').addEventListener('click', ()=>{
+  const l = appState.level;
+  appState.mcqs[l].forEach(q=>{
+    appState.answers[q.id] = appState.answers[q.id] || {};
+    appState.answers[q.id].showAnswer = true;
+  });
+  render();
+  saveNow();
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Clear all saved answers and reset everything? This cannot be undone.')){
+    clearState();
+    location.reload();
+  }
+});
+
+/* ---------- Load saved state if present ---------- */
+function bootstrap(){
+  const saved = loadState();
+  initQuestionBank();
+  if(saved && typeof saved === 'object'){
+    // merge: keep generated questions but restore answers & level & lastSaved
+    appState.answers = saved.answers || {};
+    if(saved.level) appState.level = saved.level;
+    appState.lastSaved = saved.lastSaved || null;
+  }
+  render();
+  updateSavedIndicator(!!appState.lastSaved);
+}
+
+/* ---------- Auto-save level changes periodically ---------- */
+window.addEventListener('beforeunload', ()=>{ saveNow(); });
+
+/* ---------- Start ---------- */
+bootstrap();
+
+/* Expose save function to window for debugging */
+window.saveExamState = saveNow;
+
+</script>
+</body>
+</html>
